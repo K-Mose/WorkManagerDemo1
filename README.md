@@ -31,6 +31,29 @@ background로 작동하기 원하는 일련의 작업들은 Worker 클래스를 
 * 사용자의 기기는 `doWork()`가 수행되는 동안 일깨워집니다. 우리는 작업이 진행되는 것에 대해 걱정할 필요가 없습니다. 
 * `doWork()`는 listener 객체를 반환하고, 작업 완료에 대한 실패 또는 성공에 대한 응답을 알려줍니다. 
 
+### Type of Work Request
+<a href="https://developer.android.com/topic/libraries/architecture/workmanager#types"><img src="https://developer.android.com/images/guide/background/workmanager_main.svg" width="800px"/></a>
+WorkManager는 아래와 같은 지속적 작업을 다룹니다. 
+
+* **Periodic Work Request** - 
+지속적으로 반복되는 작업을 처리합니다. Long Running, Deferrable이 여기 포함됩니다. 
+  * Long Runnging - `WorkRequest` 또는 `Wroker`에서 `setForeground()`를 호출합니다.
+  * Deferrable - `PeriodicWorkRequest`와 `Worker`로 호출합니다. 
+```
+val periodicWorkerRequest = PeriodicWorkRequest
+      .Builder(DownLoadingWorker::class.java, 16, TimeUnit.MINUTES)
+      .build()
+```
+* **One Time Work Request**
+한 번 실행되는 작업을 처리합니다. Immediate를 포함하고 Long Running과 Deferrable도 포함됩니다. 
+  * Immediate - `OneTimeWorkRequest`와 `Worker`로 호출합니다. 
+```kotlin
+val filteringRequest = OneTimeWorkRequest
+      .Builder(FilteringWorker::class.java)
+      .build()
+```
+
+
 
 
 
