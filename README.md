@@ -14,6 +14,8 @@ WorkManager는 android jetpack에서 제공하는 background task managment syst
 * WorkManager는 특정 시간이 아닌 미래에 일어날 작업을 수행하도록 설계되었습니다. 
 * WorkManager는 사용자가 앱이나 기기를 사용하지 않아도 특정 제약 상황이나 다양한 상황속에서 시작할 수 있는 로직을 관리할 것입니다.
 
+**※ WorkManager는 API level 23 이상에서 작동합니다. 23 아래에서는 Work Mange에는 BroadcastReceiver와 AlarmManager 등으로 선택됩니다.**
+
 ### benefit of WorkManager 
 * 주기적 실행을 위한 작업 배치는 WorkManager에서는 비동기 작업으로 코드 조각들을 주기적으로 실행시킬지를 정할 수 있습니다.
 * 저장공간, 네트워크 상태, 충전 상태 등 다양한 제약조건들을 지원합니다. 
@@ -53,7 +55,42 @@ val filteringRequest = OneTimeWorkRequest
       .build()
 ```
 
+### Four steps for scheduling
+1. Create a subclass of the Worker class
+```kotlin
+class FilteringWorker(context: Context, params: WorkerParameters)
+    : Worker(context, params){
+    override fun doWork(): Result {
+        try {
+            …
+            return Result.success()
+        } catch (e:Exception) {
+            return Result.failure()
+        }
+    }
+}
+```
 
+2. Create a WorkRequest
+```kotlin
+val filteringRequest = OneTimeWorkRequest
+      .Builder(FilteringWorker::class.java)
+      .build()
+```
+
+3. Enqueue the request 
+```
+val workManager = WorkManager.getInstance(applicationContext)
+workManager.enqueue(uploadRequest)
+```
+
+4. Observe&&Get the status updates
+```
+workManager.getWorkInfoByIdLiveData(filteringRequest.id)
+            .observe(this, Observer {
+               …   
+            })
+```
 
 
 
