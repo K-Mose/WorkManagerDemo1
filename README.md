@@ -46,7 +46,7 @@ val periodicWorkerRequest = PeriodicWorkRequest
       .Builder(DownLoadingWorker::class.java, 16, TimeUnit.MINUTES)
       .build()
 ```
-* **One Time Work Request**
+* **One Time Work Request** - 
 한 번 실행되는 작업을 처리합니다. Immediate를 포함하고 Long Running과 Deferrable도 포함됩니다. 
   * Immediate - `OneTimeWorkRequest`와 `Worker`로 호출합니다. 
 ```kotlin
@@ -92,7 +92,68 @@ workManager.getWorkInfoByIdLiveData(filteringRequest.id)
             })
 ```
 
+## Structure 
+```
+WorkManagerDemo1
+└─ app
+   ├─ .gitignore
+   ├─ libs
+   ├─ proguard-rules.pro
+   └─ src
+      └─ main
+         └─ AndroidManifest.xml
+         └─ java
+            └─ com
+               └─ example
+                  └─ workmanagerdemo1
+                     ├─ CompressingWorker.kt
+                     ├─ DownLoadingWorker.kt
+                     ├─ FilteringWorker.kt
+                     ├─ MainActivity.kt
+                     └─ UploadWorker.kt
+```
+각 `*Worker.kt` 클래스들은 테스트 시나리오에 사용될 다양한 종류의 Worker subclass입니다. 
 
+## OneTimeWorkRequest
+특정 파일의 업로딩을 백그라운드에서 작업한다고 가정해 봅시다. 
+
+[Four steps for scheduling](#four-steps-for-scheduling)에 따라서 우선 업로딩에 사용될 worker subclass를 작성합니다. 
+```kotlin
+class UploadWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+        try {
+            // … 업로딩 작업 …
+            return Result.success(outputData)
+        } catch (e:Exception) {
+            return Result.failure()
+        }
+    }
+}
+```
+그리고 MainActivity.kt 에서 WorkRequest를 작성합니다. 위에 작성된 worker 클래스를 Builder의 인자 값으로 넣어줍니다.  
+```kotlin 
+val uploadRequest = OneTimeWorkRequest.Builder(UploadWorker::class.java)
+      .build()
+```
+생성한 Request를 WorkManager에 추가합니다. 
+```kotlin
+val workerManager = WorkerManager.getInstance(applicationContext)
+workerManager.enqueue(uploadRequest)
+```
+마지막으로 현재 work에대한 정보가 들어있는 WorkInfo의 observer를 통해서 현재 work의 상태를 받아옵니다. 
+`getWorkInfoByIdLiveData()`는 이름에도 나타나듯 정보를 가져올 Reqeust의 id를 필요로 합니다. 
+```kotlin
+workManager.getWorkInfoByIdLiveData(uploadRequest.id)
+      .observe(this, Observer {
+      // … observation 작업 …
+      })
+```
+### WorkInfo Object 
+Work의 <a href="https://developer.android.com/reference/androidx/work/WorkInfo.State#summary">States</a>
+ * BLOCKED : 작업이 작업 체이닝에 의해 막혔을 떄 
+ * ENQUEUE : 채이닝의 다음 작업으로 적합할 때 
+ * RUNNGING : 작업 활성화
+ * SUCCEED : 작업이 성공적으로 마침
 
 # Ref.
 https://developer.android.com/topic/libraries/architecture/workmanager#expedited
