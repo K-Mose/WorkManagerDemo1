@@ -114,7 +114,7 @@ WorkManagerDemo1
 ```
 각 `*Worker.kt` 클래스들은 테스트 시나리오에 사용될 다양한 종류의 Worker subclass입니다. 
 
-## OneTimeWorkRequest
+### OneTimeWorkRequest
 특정 파일의 업로딩을 백그라운드에서 작업한다고 가정해 봅시다. 
 
 [Four steps for scheduling](#four-steps-for-scheduling)에 따라서 우선 업로딩에 사용될 worker subclass를 작성합니다. 
@@ -148,12 +148,35 @@ workManager.getWorkInfoByIdLiveData(uploadRequest.id)
       // … observation 작업 …
       })
 ```
-### WorkInfo Object 
+#### WorkInfo Object 
 Work의 <a href="https://developer.android.com/reference/androidx/work/WorkInfo.State#summary">States</a>
  * BLOCKED : 작업이 작업 체이닝에 의해 막혔을 떄 
  * ENQUEUE : 채이닝의 다음 작업으로 적합할 때 
  * RUNNGING : 작업 활성화
  * SUCCEED : 작업이 성공적으로 마침
+
+### Set Constraints 
+코드를 다양한 특정 조건하에 실행시키기 위해 제약조건(Constraint)을 사용합니다. 배터리의 상태, 충전 여부, 저장공간의 상태, 휴대폰이 유휴 상태인지, 인터넷 연결이 있는지 등등 여러가지 조건을 설정 할 수 있습니다. 다양한 제약 조건은 <a href="https://developer.android.com/reference/androidx/work/Constraints">여기(androidx.work.Constraints)</a>에서 확인 가능합니다. 
+
+제약조건을 설정하기 위해 우선 제약조건 Builder를 객체를 생성합니다. 그리고 사용할 조건을 설정합니다. 
+```kotlin
+val constraints = Constraints.Builder()
+    .setRequiresCharging(true)
+    .setRequiredNetworkType(NetworkType.CONNECTED)
+    .build()
+```
+위에는 충전 상태의 유무와 네트워크 타입을 설정한 예 입니다. 
+
+Request에 제약조건을 추가하기 위해서 Request 생성 객체에 작성한 constraints 객체를 추가합니다. 
+```kotlin 
+val uploadRequest = OneTimeWorkRequest.Builder(UploadWorker::class.java)
+    .setConstraints(constraints)
+    .build()
+```
+
+*※ Android Studio 에뮬레이터에서 배터리 상태는 아래에서 설정 할 수 있습니다.*
+<img src="https://user-images.githubusercontent.com/55622345/161433775-37524de9-41de-46b1-9b8a-b1c2f6f41948.png" width="600px"/>
+
 
 # Ref.
 https://developer.android.com/topic/libraries/architecture/workmanager#expedited
