@@ -256,6 +256,45 @@ workManager.getWorkInfoByIdLiveData(uploadRequest.id)
 ```
 
 
+### Chaining Workers 
+여러 작업들을 연쇄적으로 또는 병렬적으로 처리해 봅시다. 
+
+**Chaining** <br>
+사진을 서버에 올릴 떄 필터하고 압축 후 서버에 올린다고 생각해봅시다. 
+[UploadWorker](#onetimeworkrequest)를 만든 것 처럼 FilteringWorker와 CompressingWorker를 만들어 봅시다. 
+```kotlin 
+class FilteringWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+        …
+    }
+}
+
+class CompressingWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+        …
+    }
+}
+```
+그리고 Activity에서 worker를 생성합니다. 
+```kotiln
+val uploadRequest = OneTimeWorkRequest.Builder(UploadWorker::class.java)
+    .build()
+val filteringRequest = OneTimeWorkRequest.Builder(FilteringWorker::class.java)
+    .build()
+val compressingRequest = OneTimeWorkRequest.Builder(CompressingWorker::class.java)
+    .build()    
+```
+연쇄 작업은 아래와 같이 설정합니다. 
+
+`beginWith()` 함수를 통해서 workerManager에 chaining의 시작을 알립니다. 
+그리고 `then()` 함수로 연속으로 이어질 작업을 추가한 후 `enqueue()`로 workerManager에 작업을 등록합니다. 
+```kotlin
+workManager
+    .beginWith(filteringRequest) 
+    .then(compressingRequest)
+    .then(uploadRequest)
+    .enqueue()
+```
 # Ref.
 https://developer.android.com/topic/libraries/architecture/workmanager#expedited
 https://medium.com/@kaushik.rpk/lets-work-with-android-workmanager-using-two-deferrable-tasks-with-constraints-afac8b5fad05
