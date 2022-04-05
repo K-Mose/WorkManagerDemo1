@@ -177,6 +177,84 @@ val uploadRequest = OneTimeWorkRequest.Builder(UploadWorker::class.java)
 *※ Android Studio 에뮬레이터에서 배터리 상태는 아래에서 설정 할 수 있습니다.*
 <img src="https://user-images.githubusercontent.com/55622345/161433775-37524de9-41de-46b1-9b8a-b1c2f6f41948.png" width="600px"/>
 
+### Set Input & Output Data
+WorkMaanager로 작업을 할 떄 인자 값을 넘겨줘야 할 때가 있습니다. 그럴떄는 Data 객체를 생성하여 넘겨주면 됩니다. 
+
+**MainActivity → Work** <br>
+Data 객체로 값을 넘겨줄 떄는 상수 key값과 전송할 값을 넘겨줘야 합니다. 
+```kotlin
+// MainActivity.kt
+import androidx.work.Data
+…  
+const val KEY_COUNT_VALUE = "key_count" 
+…  
+val data:Data = Data.Builder()
+    .putInt(KEY_COUNT_VALUE, 1234)
+    .build()
+…      
+```
+
+이제 Request에 Data 객체를 추가하면 됩니다. 
+```kotlin
+val uploadRequest = OneTimeWorkRequest.Builder(UploadWorker::class.java)
+    .setInputData(data)
+    .build()
+```
+이제 데이터를 전송할 준비가 끝났습니다. 
+
+Woker 클래스로 가서 데이터를 받을 차레입니다. 여기서는 Data 객체의 getter 함수에 key를 줘서 값을 받아오면 됩니다. 
+```kotlin 
+class UploadWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+            …  
+            val count:int = inputData.getInt(MainActivity.KEY_COUNT_VALUE)
+            …
+    }
+}
+```
+
+**Work → MainActivity** <br>
+이제 Work에서 다시 Acitivity로 output data를 넘겨봅시다. 작업이 끝나고 완료된 시간을 Activity에 알려보겠습니다. 
+
+우선 데이터를 받은 것과 마찬가지로 key를 설정합니다. 그리고 작업이 완료되는 시점에서 Acitivity로 전송할 데이터를 생성합니다. 
+마지막으로 반환하는 Result states에 인자 값으로 outputData를 같이 보내면 됩니다. 
+```kotlin
+companion object {
+    const val KEY_WORKER = "key_worker"
+}
+…  
+class UploadWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+            …  
+            val count:int = inputData.getInt(MainActivity.KEY_COUNT_VALUE)
+            …
+            val time = SimpleDateFormat("yyyy/MM/dd hh:mm:ss")
+            val currentDate = time.format(Date())
+            
+            val outputData = Data.Builder()
+                .putString(KEY_WORKER, currentDate)
+                .build()            
+            return Result.success(outputData)                
+    }
+}
+```
+
+전송된 output data는 위에서 작성했던 `getWorkInfoByIdLiveData`의 oberver로 받을 수 있습니다. 
+
+우선 작업의 상태가 종료되었는지 확인합니다. 그리고 Data 객체를 생성해서 outputData를 받은 후 전송에 사용했던 key로 데이터를 찾습니다. 
+마지막으로 (여기서는)가시적으로 나타내기위해 Toast로 메시지를 띄웁니다. 
+```kotlin
+workManager.getWorkInfoByIdLiveData(uploadRequest.id)
+      .observe(this, Observer {
+          …
+          if (it.state.isFinished) {
+              val data = it.outputData
+              val message = data.getString(UploadWorker.KEY_WORKER)
+              Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
+          }
+      })
+```
+
 
 # Ref.
 https://developer.android.com/topic/libraries/architecture/workmanager#expedited
