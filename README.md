@@ -328,7 +328,20 @@ workManager
     .enqueue()
 ```
 
+### Periodic Work Request
+주기적으로 실행되는 작업을 설정해봅시다. 
 
+Periodic Work를 만들기 위해서는 Request를 `PeriodicWorkRequest`로 생성하면 됩니다. `PeriodicWorkRequest`의 Builder에는 Worker class, repeatInterval, TimeUnit이 인자 값으로 들어갑니다.
+*jetpack에서의 작업 주기의 최소 시간은 15분 입니다.* 여기서는 20분마다 실행되게 해보겠습니다. 
+```
+val periodicWorkerRequest = PeriodicWorkRequest
+    .Builder(DownLoadingWorker::class.java, 20, TimeUnit.MINUTES)
+    .build()
+```
+그리고 Request를 WorkManger에 등록하면 끝이 납니다. 
+```kotlin
+WorkManager.getInstance(applicationContext).enqueue(periodicWorkerRequest)
+```
 # Ref.
 https://developer.android.com/topic/libraries/architecture/workmanager#expedited
 https://medium.com/@kaushik.rpk/lets-work-with-android-workmanager-using-two-deferrable-tasks-with-constraints-afac8b5fad05
