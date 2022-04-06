@@ -342,6 +342,10 @@ val periodicWorkerRequest = PeriodicWorkRequest
 ```kotlin
 WorkManager.getInstance(applicationContext).enqueue(periodicWorkerRequest)
 ```
-# Ref.
+
+## Dependency
+Work - androidx.work:work-runtime-ktx:2.7.1 // Kotlin + coroutines
+
+## Ref.
 https://developer.android.com/topic/libraries/architecture/workmanager#expedited
 https://medium.com/@kaushik.rpk/lets-work-with-android-workmanager-using-two-deferrable-tasks-with-constraints-afac8b5fad05
