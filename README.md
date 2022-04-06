@@ -276,7 +276,7 @@ class CompressingWorker(context: Context, params: WorkerParameters) : Worker(con
 }
 ```
 그리고 Activity에서 worker를 생성합니다. 
-```kotiln
+```kotlin
 val uploadRequest = OneTimeWorkRequest.Builder(UploadWorker::class.java)
     .build()
 val filteringRequest = OneTimeWorkRequest.Builder(FilteringWorker::class.java)
@@ -295,6 +295,40 @@ workManager
     .then(uploadRequest)
     .enqueue()
 ```
+
+
+**Parallel Chaining** <br>
+사진을 업로드 하면서 다른 이미지들을 다운로드 한다고 가정해 봅시다. 두 작업이 동시에 일어나기 위해서는 사진을 올리는 첫 작업인 Filtering과 사진을 다운받는 Downloading 작업이 병렬로 이뤄지도록 해보겠습니다. 
+
+우선 다른 Woker와 마찬가지로 Downloading worker를 생성합니다. 
+```kotlin 
+class DownloadingWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+    override fun doWork(): Result {
+        …
+    }
+}
+```
+그리고 Activity에서 Request를 생성합니다. 
+```kotlin
+val downloadingRequest = OneTimeWorkRequest.Builder(DownloadingWorker::class.java)
+    .build()    
+```
+이제 두 작업을 동시에 처리하기위해 `MutableList`를 만들고 작업을 추가합니다. 
+```kotlin
+val parallelWorks = mutableListOf<OneTimeWorkRequest>()
+parallelWorks.add(downloadingRequest)
+parallelWorks.add(filteringRequest) 
+```
+마지막으로 Chaining의 시작점을 parallelworkers로 사용합니다. 
+```kotlin
+workManager
+    .beginWith(parallelWorks) 
+    .then(compressingRequest)
+    .then(uploadRequest)
+    .enqueue()
+```
+
+
 # Ref.
 https://developer.android.com/topic/libraries/architecture/workmanager#expedited
 https://medium.com/@kaushik.rpk/lets-work-with-android-workmanager-using-two-deferrable-tasks-with-constraints-afac8b5fad05
